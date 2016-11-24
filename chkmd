@@ -1,7 +1,7 @@
 #! /usr/bin/python
 # -*- coding: utf-8 -*-
 
-"""chkmd: count how many word of a Markdown files """
+"""chkmd: count how many word of Markdown files """
 
 __author__ = "Jory Liang"
 __copyright__ = "Copyright 2015, Tamer"
@@ -12,6 +12,9 @@ from enum import Enum
 
 reload(sys)
 sys.setdefaultencoding('utf8')
+
+# 解析后的参数
+real_arg = {}
 
 
 class Pattern(Enum):
@@ -26,7 +29,7 @@ class Pattern(Enum):
 
 class Argv(Enum):
     """argument of chkmd"""
-    LEVEL = "-L"
+    LEVEL = "-l"
 
 
 class MarkdownFile(object):
@@ -51,8 +54,23 @@ class MarkdownFile(object):
         return len(re.findall(pattern, text))
 
 
+def deal_with_argv():
+    pre_arg = ""
+    arg_flag = False
+    for arg in sys.argv:
+        if arg_flag:
+            real_arg[pre_arg] = arg
+
+        if arg[0] == "-":
+            pre_arg = arg
+            arg_flag = True
+
+        real_arg["path"] = arg
+
+
 def main():
-    doc = MarkdownFile("C:\Users\Administrator\Desktop\liangzr\me\pat-b-practise\README.md")
+    deal_with_argv()
+    doc = MarkdownFile(real_arg["path"])
     doc.count_words()
 
 
