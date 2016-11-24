@@ -1,0 +1,60 @@
+#! /usr/bin/python
+# -*- coding: utf-8 -*-
+
+"""chkmd: count how many word of a Markdown files """
+
+__author__ = "Jory Liang"
+__copyright__ = "Copyright 2015, Tamer"
+
+import sys
+import re
+from enum import Enum
+
+reload(sys)
+sys.setdefaultencoding('utf8')
+
+
+class Pattern(Enum):
+    """docstring for Partten"""
+    # 中文汉字
+    ZH_WORD = u"[\u4e00-\u9fa5]"
+    # 中文标点
+    ZH_PUNC = u"[\u3000-\u303f\ufb00-\ufffd]"
+    # 所有字符
+    ALL_CHAR = u"[^\n\s]"
+
+
+class Argv(Enum):
+    """argument of chkmd"""
+    LEVEL = "-L"
+
+
+class MarkdownFile(object):
+    """operate markdown file"""
+
+    def __init__(self, path):
+        super(MarkdownFile, self).__init__()
+        self.name = re.search(r'^.*/(.*?)$', path)
+        self.path = path
+        self.content = ""
+        self._read_file()
+
+    def _read_file(self):
+        with open(self.path, 'r') as f:
+            self.content = unicode(f.read())
+
+    def count_words(self, deep_level=0):
+        pass
+
+    @staticmethod
+    def _calc_words(text, pattern):
+        return len(re.findall(pattern, text))
+
+
+def main():
+    doc = MarkdownFile("C:\Users\Administrator\Desktop\liangzr\me\pat-b-practise\README.md")
+    doc.count_words()
+
+
+if __name__ == '__main__':
+    main()
