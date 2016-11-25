@@ -35,6 +35,8 @@ class Pattern(Enum):
     ALL_CHAR = u"[^\n\s]"
     # 后缀
     SUFFIX = r'^.*\.(\w+?)$'
+    # 取标题
+    TITLE = r'^.?\n'
 
 
 class Argv(Enum):
@@ -71,9 +73,9 @@ class MarkdownFile(object):
                 m = re.findall(Pattern.SUFFIX, path)
                 if m and m[0] == "md":
                     self._read_file(path)
-                    count_dict["zh_word"] = self._calc_words(self.content, Pattern.ZH_WORD)
-                    count_dict["zh_punc"] = self._calc_words(self.content, Pattern.ZH_PUNC)
-                    count_dict["all_char"] = self._calc_words(self.content, Pattern.ALL_CHAR)
+                    count_dict["zh_word"] = self._calc_word(Pattern.ZH_WORD, self.content)
+                    count_dict["zh_punc"] = self._calc_word(Pattern.ZH_PUNC, self.content)
+                    count_dict["all_char"] = self._calc_word(Pattern.ALL_CHAR, self.content)
                     # 打印当前文件信息
                     print ("%-50s" + "%-20s" + "%-20s" + "%-20s") % (
                         lists, count_dict["zh_word"], count_dict["zh_punc"], count_dict["all_char"])
@@ -84,19 +86,20 @@ class MarkdownFile(object):
         self.print_parag(self.content, deep_level)
 
     def print_parag(self, text, deep_level=1):
-        parts = re.split(r"#" * deep_level, text)
+        parts = re.split(r"\b#\b" * deep_level, text)
         for part in parts:
             if part == "":
                 continue
-            count_dict["zh_word"] = self._calc_words(part, Pattern.ZH_WORD)
-            count_dict["zh_punc"] = self._calc_words(part, Pattern.ZH_PUNC)
-            count_dict["all_char"] = self._calc_words(part, Pattern.ALL_CHAR)
+            # title = re.split(Pattern.TITLE, part)[0]
+            count_dict["zh_word"] = self._calc_word(Pattern.ZH_WORD, part)
+            count_dict["zh_punc"] = self._calc_word(Pattern.ZH_PUNC, part)
+            count_dict["all_char"] = self._calc_word(Pattern.ALL_CHAR, part)
             # 打印当前文件信息
             print ("%-50s" + "%-20s" + "%-20s" + "%-20s") % (
                 "None", count_dict["zh_word"], count_dict["zh_punc"], count_dict["all_char"])
 
     @staticmethod
-    def _calc_words(text, pattern):
+    def _calc_word(pattern, text):
         return str(len(re.findall(pattern, text)))
 
 
@@ -122,7 +125,8 @@ def main():
     if os.path.isdir(abs_path):
         doc.list_dir()
     else:
-        doc.count_words(1)
+        if real_arg[Argv.LEVEL]:
+            doc.count_words(3)
 
 
 if __name__ == '__main__':
