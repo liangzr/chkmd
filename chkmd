@@ -1,0 +1,129 @@
+#! /usr/bin/python
+# -*- coding: utf-8 -*-
+
+"""chkmd: count how many word of Markdown files """
+
+__author__ = "Jory Liang"
+__copyright__ = "Copyright 2015, Tamer"
+
+import os
+import sys
+import re
+from enum import Enum
+
+reload(sys)
+sys.setdefaultencoding('utf8')
+
+# 解析后的参数
+real_arg = {"path": "."}
+
+# 字数统计
+count_dict = {
+    "zh_word": "",
+    "zh_punc": "",
+    "all_char": "",
+}
+
+
+class Pattern(Enum):
+    """docstring for Partten"""
+    # 中文汉字 + alphabet + number
+    ZH_WORD = u"[0-9A-Za-z\u4e00-\u9fa5]"
+    # 中文标点
+    ZH_PUNC = u"[\u3000-\u303f\ufb00-\ufffd]"
+    # 所有字符
+    ALL_CHAR = u"[^\n\s]"
+    # 后缀
+    SUFFIX = r'^.*\.(\w+?)$'
+
+
+class Argv(Enum):
+    """argument of chkmd"""
+    LEVEL = "-l"
+
+
+class MarkdownFile(object):
+    """operate markdown file"""
+
+    def __init__(self, path):
+        super(MarkdownFile, self).__init__()
+        self.name = re.search(r'^.*/(.*?)$', path)
+        self.path = path
+        self.content = ""
+
+    def _read_file(self, path):
+        with open(path, 'r') as f:
+            self.content = unicode(f.read())
+
+    def list_dir(self):
+        # 打印文件夹头
+        print "-" * 140
+        print ("%-50s" + "%-20s" + "%-20s" + "%-20s") % ("filename", "words", "punctuation", "chars")
+        print "-" * 140
+        for lists in os.listdir(self.path):
+            # 跳过隐藏文件夹
+            if lists[0] == ".":
+                continue
+
+            path = os.path.join(self.path, lists)
+            # print path
+            if os.path.isfile(path):
+                m = re.findall(Pattern.SUFFIX, path)
+                if m and m[0] == "md":
+                    self._read_file(path)
+                    count_dict["zh_word"] = self._calc_words(self.content, Pattern.ZH_WORD)
+                    count_dict["zh_punc"] = self._calc_words(self.content, Pattern.ZH_PUNC)
+                    count_dict["all_char"] = self._calc_words(self.content, Pattern.ALL_CHAR)
+                    # 打印当前文件信息
+                    print ("%-50s" + "%-20s" + "%-20s" + "%-20s") % (
+                        lists, count_dict["zh_word"], count_dict["zh_punc"], count_dict["all_char"])
+        print ""
+
+    def count_words(self, deep_level=0):
+        self._read_file(self.path)
+        self.print_parag(self.content, deep_level)
+
+    def print_parag(self, text, deep_level=1):
+        parts = re.split(r"#" * deep_level, text)
+        for part in parts:
+            if part == "":
+                continue
+            count_dict["zh_word"] = self._calc_words(part, Pattern.ZH_WORD)
+            count_dict["zh_punc"] = self._calc_words(part, Pattern.ZH_PUNC)
+            count_dict["all_char"] = self._calc_words(part, Pattern.ALL_CHAR)
+            # 打印当前文件信息
+            print ("%-50s" + "%-20s" + "%-20s" + "%-20s") % (
+                "None", count_dict["zh_word"], count_dict["zh_punc"], count_dict["all_char"])
+
+    @staticmethod
+    def _calc_words(text, pattern):
+        return str(len(re.findall(pattern, text)))
+
+
+def deal_with_argv():
+    pre_arg = ""
+    arg_flag = False
+    for arg in sys.argv:
+        if arg_flag:
+            real_arg[pre_arg] = arg
+
+        if arg[0] == "-":
+            pre_arg = arg
+            arg_flag = True
+
+        real_arg["path"] = arg
+
+
+def main():
+    deal_with_argv()
+    abs_path = os.path.abspath(real_arg["path"])
+    print abs_path
+    doc = MarkdownFile(abs_path)
+    if os.path.isdir(abs_path):
+        doc.list_dir()
+    else:
+        doc.count_words(1)
+
+
+if __name__ == '__main__':
+    main()
